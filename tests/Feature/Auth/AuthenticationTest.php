@@ -8,13 +8,13 @@ test('login screen can be rendered', function () {
 
     $response
         ->assertOk()
-        ->assertSeeVolt('pages.auth.login');
+        ->assertSeeVolt('auth.login');
 });
 
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
 
-    $component = Volt::test('pages.auth.login')
+    $component = Volt::test('auth.login')
         ->set('form.email', $user->email)
         ->set('form.password', 'password');
 
@@ -30,7 +30,7 @@ test('users can authenticate using the login screen', function () {
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $component = Volt::test('pages.auth.login')
+    $component = Volt::test('auth.login')
         ->set('form.email', $user->email)
         ->set('form.password', 'wrong-password');
 
