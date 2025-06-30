@@ -3,38 +3,38 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\{Layout, Title};
 use function Livewire\Volt\{title, layout};
-use App\Models\Category;
-use App\Livewire\Forms\CategoryForm;
-use App\Services\CategoryService;
+use App\Models\Post;
+use App\Livewire\Forms\PostForm;
+use App\Services\PostService;
 
 layout('layouts.app');
 title('Categories');
 new class extends Component {
-    public CategoryForm $form;
+    public PostForm $form;
     public bool $isLoading = false;
-    // public ?Category $category = null;
+    // public ?Post $post = null;
 
     //
 
-    public function onConfirmDelete(CategoryService $service, Category $category): void
+    public function onConfirmDelete(PostService $service, Post $post): void
     {
         $this->isLoading = true;
-        $this->form->setCategory($category);
+        $this->form->setPost($post);
         try {
-            if (!$category) {
-                throw new \Exception('Category not found.');
+            if (!$post) {
+                throw new \Exception('Post not found.');
             }
             $this->form->delete($service);
-            $this->dispatch('category-deleted');
+            $this->dispatch('post-deleted');
             $this->dispatch('show-flash', [
-                'message' => 'Category successfully deleted.',
+                'message' => 'Post successfully deleted.',
                 'type' => 'success',
             ]);
             Flux::modal('dialog-confirm-modal')->close();
             $this->isLoading = false;
         } catch (\Exception $e) {
             $this->dispatch('show-flash', [
-                'message' => 'Category not found.',
+                'message' => 'Post not found.',
                 'type' => 'error',
             ]);
             $this->isLoading = false;
@@ -49,14 +49,14 @@ new class extends Component {
 <x-slot name="breadcrumb">
     <flux:breadcrumbs>
         <flux:breadcrumbs.item :href="route('dashboard')" icon="home" label="Dashboard" wire:navigate />
-        <flux:breadcrumbs.item>Category</flux:breadcrumbs.item>
+        <flux:breadcrumbs.item>Post</flux:breadcrumbs.item>
     </flux:breadcrumbs>
 </x-slot>
 
 <flux:main container>
 
     <div class="flex justify-between items-center mb-6">
-        <flux:heading size="xl" level="1">Category</flux:heading>
+        <flux:heading size="xl" level="1">Post</flux:heading>
         <flux:button class="cursor-pointer" icon="plus" size="sm" variant="primary"
             wire:click="$dispatch('open-form')">
             Create New
@@ -67,7 +67,7 @@ new class extends Component {
         collection.</flux:text>
     <flux:separator variant="subtle" />
 
-    <livewire:category.list />
-    <livewire:category.form />
+    <livewire:post.list />
+    <livewire:post.form />
     <livewire:common.dialog-confirm-modal :$isLoading @btn-delete-click="onConfirmDelete(id)" />
 </flux:main>

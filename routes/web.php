@@ -10,6 +10,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('dashboard');
 
     Volt::route('category', 'category.index')->name('category');
+    Volt::route('post', 'post.index')->name('post');
 
     Route::view('profile', 'profile')
         ->name('profile');

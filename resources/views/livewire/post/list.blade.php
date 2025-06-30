@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\Category;
+use App\Models\Post;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
-use App\Services\CategoryService;
+use App\Services\PostService;
 
 new class extends Component {
     use WithPagination;
@@ -14,10 +14,10 @@ new class extends Component {
     public ?string $search = '';
 
     // Fungsi untuk mendapatkan daftar kategori
-    public function with(CategoryService $service): array
+    public function with(PostService $service): array
     {
         return [
-            'categories' => $service->getPaginated(search: $this->search, perPage: 10),
+            'posts' => $service->getPaginated(search: $this->search, perPage: 4),
         ];
     }
 
@@ -27,8 +27,7 @@ new class extends Component {
         $this->resetPage();
     }
 
-    // Atau cara yang lebih simpel dengan magic action $refresh
-    #[On('category-deleted'), On('category-upserted')]
+    #[On('post-deleted'), On('post-upserted')]
     public function placeholder()
     {
         $this->search = '';
@@ -59,29 +58,42 @@ new class extends Component {
                                 <tr>
                                     <th scope="col"
                                         class="px-6 py-3 text-xs font-medium tracking-wider text-left text-zinc-500 dark:text-zinc-200 uppercase">
-                                        Nama</th>
+                                        Title</th>
                                     <th scope="col"
                                         class="px-6 py-3 text-xs font-medium tracking-wider text-left text-zinc-500 dark:text-zinc-200 uppercase">
-                                        Slug</th>
+                                        Status</th>
                                     <th scope="col"
                                         class="px-6 py-3 text-xs font-medium tracking-wider text-left text-zinc-500 dark:text-zinc-200 uppercase">
-                                        Description</th>
+                                        Published At</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-xs font-medium tracking-wider text-left text-zinc-500 dark:text-zinc-200 uppercase">
+                                        Created At</th>
                                     <th scope="col" class="relative px-6 py-3">
                                         <span class="sr-only">Action</span>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-600">
-                                @forelse ($categories as $category)
-                                    <tr wire:key="{{ $category->id }}">
+                                @forelse ($posts as $post)
+                                    <tr wire:key="{{ $post->id }}">
                                         <td class="px-6 py-4 whitespace-nowrap text-zinc-800 dark:text-zinc-200">
-                                            {{ $category->name }}
+                                            {{ $post->title }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-zinc-800 dark:text-zinc-200">
-                                            {{ $category->slug }}
+                                            <flux:badge size="sm"
+                                                color="{{ $post->status === 'published' ? 'green' : 'yellow' }}">
+                                                {{ $post->status }}
+                                            </flux:badge>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-zinc-800 dark:text-zinc-200">
-                                            {{ $category->description }}
+                                            @if ($post->published_at)
+                                                {{ $post->published_at->format('Y-m-d H:i:s') }}
+                                            @else
+                                                <span class="text-zinc-500">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-zinc-800 dark:text-zinc-200">
+                                            {{ $post->created_at->format('Y-m-d H:i:s') }}
                                         </td>
                                         <td class="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
 
@@ -90,18 +102,32 @@ new class extends Component {
                                                     size="sm" icon="ellipsis-horizontal"></flux:button>
 
                                                 <flux:menu>
+                                                    {{-- if status draft  --}}
+                                                    <flux:menu.item class="cursor-pointer"
+                                                        icon="{{ $post->status === 'draft' ? 'arrow-up-on-square' : 'arrow-down-on-square' }}"
+                                                        @click="$dispatch('open-dialog-modal', {
+                                                            'id': {{ $post->id }},
+                                                            'title': '{{ $post->status === 'draft' ? 'Publish Post' : 'Unpublish Post' }}',
+                                                            'description': 'Are you sure you want to {{ $post->status === 'draft' ? 'publish' : 'unpublish' }} {{ $post->title }} ?',
+                                                            'buttonText':'Yes',
+                                                            'buttonVariant': '{{ $post->status === 'draft' ? 'primary' : 'default' }}',
+                                                            'dispatchEvent': 'post-status-toggled'
+                                                        })">
+                                                        {{ $post->status === 'draft' ? 'Publish' : 'Unpublish' }}
+                                                    </flux:menu.item>
                                                     <flux:menu.item class="cursor-pointer" icon="pencil"
-                                                        wire:click="$dispatch('open-form', { categoryId: {{ $category->id }} })">
+                                                        wire:click="$dispatch('open-form', { postId: {{ $post->id }} })">
                                                         Edit
                                                     </flux:menu.item>
                                                     <flux:menu.separator />
                                                     <flux:menu.item
                                                         @click="$dispatch('open-dialog-modal', {
-                                                            'id': {{ $category->id }},
-                                                            'title': 'Delete Category',
-                                                            'description': 'Are you sure you want to delete this category {{ $category->name }} ? This action cannot be undone.',
+                                                            'id': {{ $post->id }},
+                                                            'title': 'Delete Post',
+                                                            'description': 'Are you sure you want to delete this post {{ $post->name }} ? This action cannot be undone.',
                                                             'buttonText': 'Yes, Delete',
-                                                            'buttonVariant': 'danger'
+                                                            'buttonVariant': 'danger',
+                                                            'dispatchEvent': 'btn-delete-click'
                                                         })"
                                                         class="cursor-pointer" variant="danger" icon="trash">
                                                         Delete
@@ -112,12 +138,13 @@ new class extends Component {
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4"
+                                        <td colspan="5"
                                             class="px-6 py-4 text-center text-zinc-500 dark:text-zinc-400">
-                                            No categories found.
+                                            No posts found.
                                         </td>
                                     </tr>
                                 @endforelse
+
                             </tbody>
                         </table>
                     </div>
@@ -126,7 +153,7 @@ new class extends Component {
 
         </div>
         <div class="mt-4">
-            {{ $categories->links('vendor.pagination.custom-simple-tailwind') }}
+            {{ $posts->links('vendor.pagination.custom-simple-tailwind') }}
         </div>
     </div>
 </div>

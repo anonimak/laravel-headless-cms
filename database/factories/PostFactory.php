@@ -17,13 +17,16 @@ class PostFactory extends Factory
 
     public function definition(): array
     {
+        $status = $this->faker->randomElement(['draft', 'published']);
+        $publishedAt = $status === 'published' ? $this->faker->dateTimeBetween('-1 year', 'now') : null;
         return [
             'title' => $this->faker->sentence(),
             'content' => $this->faker->paragraph(),
             'slug' => $this->faker->unique()->slug(),
             'excerpt' => $this->faker->text(100),
             'image' => $this->faker->imageUrl(640, 480, 'posts'),
-            'status' => $this->faker->randomElement(['draft', 'published']),
+            'status' => $status,
+            'published_at' => $publishedAt,
             'created_by' => 1, // assuming user ID 1 exists
             'updated_by' => 1, // assuming user ID 1 exists
             'deleted_by' => null, // null for not deleted

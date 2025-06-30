@@ -29,7 +29,8 @@
             </flux:navbar.item>
             <flux:navbar.item icon="inbox" href="{{ route('category') }}" :current="request()->routeIs('category')"
                 wire:navigate>Category</flux:navbar.item>
-            <flux:navbar.item icon="document-text" href="#">Post</flux:navbar.item>
+            <flux:navbar.item icon="document-text" href="{{ route('post') }}" :current="request()->routeIs('post')"
+                wire:navigate>Post</flux:navbar.item>
             <flux:navbar.item icon="calendar" href="#">Page</flux:navbar.item>
             <flux:separator vertical variant="subtle" class="my-2" />
             <flux:navbar.item icon="photo" href="#">Media Manager</flux:navbar.item>
