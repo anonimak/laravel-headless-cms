@@ -50,14 +50,15 @@ new class extends Component {
     <flux:breadcrumbs>
         <flux:breadcrumbs.item :href="route('dashboard')" icon="home" label="Dashboard" wire:navigate />
         <flux:breadcrumbs.item>Category</flux:breadcrumbs.item>
-    </flux:breadcrumbs> {{-- Anda sepertinya salah ketik, seharusnya </flux:breadcrumbs> --}}
+    </flux:breadcrumbs>
 </x-slot>
 
 <flux:main container>
 
     <div class="flex justify-between items-center mb-6">
         <flux:heading size="xl" level="1">Category</flux:heading>
-        <flux:button class="cursor-pointer" icon="plus" size="sm" variant="primary" @click="$dispatch('open-form')">
+        <flux:button class="cursor-pointer" icon="plus" size="sm" variant="primary"
+            wire:click="$dispatch('open-form')">
             Create New
         </flux:button>
     </div>
@@ -66,7 +67,6 @@ new class extends Component {
         collection.</flux:text>
     <flux:separator variant="subtle" />
 
-    {{-- Memanggil komponen Livewire lain bekerja dengan cara yang sama persis --}}
     <livewire:category.list />
     <livewire:category.form />
     <livewire:common.delete-confirm-modal :$isLoading @btn-delete-click="onConfirmDelete(id)" />

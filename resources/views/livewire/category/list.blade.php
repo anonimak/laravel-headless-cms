@@ -91,7 +91,7 @@ new class extends Component {
 
                                                 <flux:menu>
                                                     <flux:menu.item class="cursor-pointer" icon="pencil"
-                                                        @click="$dispatch('open-form',{'category':{{ json_encode($category) }}})">
+                                                        wire:click="$dispatch('open-form', { categoryId: {{ $category->id }} })">
                                                         Edit
                                                     </flux:menu.item>
                                                     <flux:menu.separator />

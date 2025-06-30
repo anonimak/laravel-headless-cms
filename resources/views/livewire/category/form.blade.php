@@ -29,12 +29,10 @@ new class extends Component {
     }
 
     #[On('open-form')]
-    public function onOpen($category = null): void
+    public function onOpen(CategoryService $service, ?int $categoryId = null): void
     {
-        if (is_array($category)) {
-            $category = Category::find($category['id']);
-        } elseif ($category instanceof Category) {
-            $category = $category;
+        if ($categoryId) {
+            $category = $service->getById($categoryId);
         } else {
             $category = new Category();
         }
