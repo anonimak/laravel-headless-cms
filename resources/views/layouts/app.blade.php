@@ -6,44 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'Laravel CMS') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net" />
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600&display=swap" rel="stylesheet" />
     <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js']) 
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @fluxAppearance
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:header container class="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700">
-        <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-        <flux:brand href="#" logo="https://fluxui.dev/img/demo/logo.png" name="Acme Inc."
-            class="max-lg:hidden dark:hidden" />
-        <flux:brand href="#" logo="https://fluxui.dev/img/demo/dark-mode-logo.png" name="Acme Inc."
-            class="max-lg:hidden! hidden dark:flex" />
-        <flux:navbar class="-mb-px max-lg:hidden">
-            <flux:navbar.item icon="squares-2x2" href="{{ route('dashboard') }}"
-                :current="request()->routeIs('dashboard')" wire:navigate>Dashboard
-            </flux:navbar.item>
-            <flux:navbar.item icon="inbox" href="{{ route('category') }}" :current="request()->routeIs('category')"
-                wire:navigate>Category</flux:navbar.item>
-            <flux:navbar.item icon="document-text" href="{{ route('post') }}" :current="request()->routeIs('post')"
-                wire:navigate>Post</flux:navbar.item>
-            <flux:navbar.item icon="calendar" href="#">Page</flux:navbar.item>
-            <flux:separator vertical variant="subtle" class="my-2" />
-            <flux:navbar.item icon="photo" href="#">Media Manager</flux:navbar.item>
-        </flux:navbar>
-        <flux:spacer />
-
-        <flux:navbar class="me-4">
-            <flux:navbar.item icon="magnifying-glass" href="#" label="Search" />
-        </flux:navbar>
-
-        <livewire:header.user-profile-dropdown />
-    </flux:header>
-
+    <x-header />
+    {{-- 
     <flux:sidebar stashable sticky
         class="lg:hidden bg-zinc-50 dark:bg-zinc-900 border rtl:border-r-0 rtl:border-l border-zinc-200 dark:border-zinc-700">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
@@ -67,7 +42,7 @@
             <flux:navlist.item icon="cog-6-tooth" href="#">Settings</flux:navlist.item>
             <flux:navlist.item icon="information-circle" href="#">Help</flux:navlist.item>
         </flux:navlist>
-    </flux:sidebar>
+    </flux:sidebar> --}}
 
     <div class="min-h-screen bg-white dark:bg-zinc-800">
         {{-- <livewire:layout.navigation /> --}}
@@ -87,7 +62,8 @@
         </main>
         {{-- if have flash --}}
         {{-- @if (session('success')) --}}
-        <livewire:common.flash-message/>
+        <livewire:common.flash-message />
+        <livewire:media-manager.list-modal />
         {{-- @endif --}}
     </div>
     @fluxScripts
