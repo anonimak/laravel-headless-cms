@@ -1,14 +1,14 @@
 <?php
 
 use Livewire\Volt\Component;
-use Livewire\Attributes\{Layout, Title};
+use Livewire\Attributes\{Layout, Title, On};
 use function Livewire\Volt\{title, layout};
 use App\Models\Post;
 use App\Livewire\Forms\PostForm;
 use App\Services\PostService;
 
 layout('layouts.app');
-title('Categories');
+title('Post');
 new class extends Component {
     public PostForm $form;
     public bool $isLoading = false;
@@ -41,6 +41,29 @@ new class extends Component {
             return;
         }
     }
+
+    public function onPostStatusToggled(PostService $service, Post $post): void
+    {
+        $this->isLoading = true;
+        $this->form->setPost($post);
+        try {
+            $this->form->togglePublish($service);
+            $this->dispatch('post-upserted');
+            $this->dispatch('show-flash', [
+                'message' => 'Post status updated successfully.',
+                'type' => 'success',
+            ]);
+            Flux::modal('dialog-confirm-modal')->close();
+            $this->isLoading = false;
+        } catch (\Exception $e) {
+            $this->dispatch('show-flash', [
+                'message' => 'Failed to update post status: ' . $e->getMessage(),
+                'type' => 'error',
+            ]);
+            $this->isLoading = false;
+            return;
+        }
+    }
 };
 
 ?>
@@ -67,7 +90,9 @@ new class extends Component {
         collection.</flux:text>
     <flux:separator variant="subtle" />
 
+
     <livewire:post.list />
     <livewire:post.form />
-    <livewire:common.dialog-confirm-modal :$isLoading @btn-delete-click="onConfirmDelete(id)" />
+    <livewire:common.dialog-confirm-modal :$isLoading @btn-delete-click="onConfirmDelete(id)"
+        @post-status-toggled="onPostStatusToggled(id)" />
 </flux:main>

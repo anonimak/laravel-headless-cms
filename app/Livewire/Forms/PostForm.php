@@ -43,18 +43,11 @@ class PostForm extends Form
             $service->create($validatedData);
         }
     }
-
-    public function publish(PostService $service): void
+    // toggle publish status
+    public function togglePublish(PostService $service): void
     {
         if ($this->post) {
-            $service->publish($this->post);
-        }
-    }
-
-    public function unpublish(PostService $service): void
-    {
-        if ($this->post) {
-            $service->unpublish($this->post);
+            $service->togglePublish($this->post);
         }
     }
 

@@ -7,7 +7,6 @@ use App\Services\PostService;
 
 new class extends Component {
     public PostForm $form;
-    public string $postContent = '';
 
     public function save(PostService $service)
     {
@@ -45,37 +44,81 @@ new class extends Component {
     {
         $this->form->resetForm();
     }
+
+    #[On('post-deleted'), On('post-upserted')]
+    public function placeholder()
+    {
+        $this->search = '';
+    }
+
+    #[On('post-deleted')]
+    public function onPostDeleted(): void
+    {
+        $this->form->resetForm();
+        Flux::modal('form-post')->close();
+    }
 };
 ?>
 
-<flux:modal name="form-post" @close="onCloseForm" variant="flyout" class="w-full !ml-0 !max-w-full !p-0" dismissible="false">
+<flux:modal name="form-post" @close="onCloseForm" variant="flyout" class="w-full !ml-0 !max-w-full !p-0" dismissible="false"
+    wire:ignore.self>
     <flux:header class="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-        <flux:brand href="#" logo="https://fluxui.dev/img/demo/logo.png" name="Acme Inc."
-            class="max-lg:hidden dark:hidden" />
-        <flux:brand href="#" logo="https://fluxui.dev/img/demo/dark-mode-logo.png" name="Acme Inc."
-            class="max-lg:hidden! hidden dark:flex" />
+        <flux:brand href="#" name="LaravelCMS">
+            <x-slot name="logo" class="size-6 rounded-full bg-cyan-500 text-white text-xs font-bold">
+                <flux:icon name="rocket-launch" variant="micro" />
+            </x-slot>
+        </flux:brand>
         <flux:navbar class="-mb-px max-lg:hidden">
-            <flux:button size="sm" variant="filled" class="cursor-pointer">Save</flux:button>
-            <flux:dropdown>
-                <flux:button size="sm" variant="primary" icon:trailing="chevron-down" class="cursor-pointer">
-                    Published</flux:button>
-                <flux:menu>
-                    <flux:menu.item class="cursor-pointer" icon="arrow-down-on-square" variant="danger">Unpublish
-                    </flux:menu.item>
-                    <flux:menu.separator />
-                    <flux:menu.item class="cursor-pointer" icon="document-duplicate">Duplicate</flux:menu.item>
-                </flux:menu>
-            </flux:dropdown>
+            {{-- <flux:button size="sm" variant="filled" class="cursor-pointer">Save</flux:button> --}}
+            @if ($form->post && $form->post->id)
+                <flux:dropdown>
+                    <flux:button size="sm" variant="{{ $form->post->status == 'draft' ? '' : 'primary' }}"
+                        icon:trailing="chevron-down" class="cursor-pointer">
+                        {{ $form->post->status == 'draft' ? 'Unpublish' : 'Publish' }}</flux:button>
+                    <flux:menu>
+                        <flux:menu.item class="cursor-pointer"
+                            @click="$dispatch('open-dialog-modal', {
+                                'id': {{ $form->post->id }},
+                                'title': '{{ $form->post->status === 'draft' ? 'Publish Post' : 'Unpublish Post' }}',
+                                'description': 'Are you sure you want to {{ $form->post->status === 'draft' ? 'publish' : 'unpublish' }} {{ $form->post->title }} ?',
+                                'buttonText':'Yes',
+                                'buttonVariant': '{{ $form->post->status === 'draft' ? 'primary' : 'default' }}',
+                                'dispatchEvent': 'post-status-toggled'
+                            })"
+                            icon="{{ $form->post->status == 'draft' ? 'arrow-up-on-square' : 'arrow-down-on-square' }}">
+                            {{ $form->post->status == 'draft' ? 'Publish' : 'Unpublish' }}
+                        </flux:menu.item>
+                        <flux:menu.separator />
+                        <flux:menu.item disabled class="cursor-pointer" icon="document-duplicate">Duplicate
+                        </flux:menu.item>
+                    </flux:menu>
+                </flux:dropdown>
+                <flux:button size="sm" variant="danger" icon="trash" class="cursor-pointer"
+                    @click="$dispatch('open-dialog-modal', {
+                                'id': {{ $form->post->id }},
+                                'title': 'Delete Post',
+                                'description': 'Are you sure you want to delete this post {{ $form->post->name }} ? This action cannot be undone.',
+                                'buttonText': 'Yes, Delete',
+                                'buttonVariant': 'danger',
+                                'dispatchEvent': 'btn-delete-click'
+                            })">
+                    Delete Entry
+                </flux:button>
+            @endif
             <flux:separator vertical variant="subtle" class="my-2" />
-            <flux:button size="sm" variant="danger" icon="trash" class="cursor-pointer">Delete Entry
-            </flux:button>
+
+            <flux:modal.trigger name="media-manager-modal">
+                <flux:button class="cursor-pointer" icon="photo" size="sm">
+                    Media Manager
+                </flux:button>
+            </flux:modal.trigger>
         </flux:navbar>
         <flux:spacer />
     </flux:header>
     <div class="flex h-screen overflow-hidden overflow-y-scroll" x-data="{
         isResizing: false,
-        liveContent: @entangle('postContent').live,
+        liveContent: @entangle('form.content').live,
         leftPanelWidth: localStorage.getItem('leftPanelWidth') || window.innerWidth / 2,
         onMouseDown(event) {
             event.preventDefault();
@@ -112,7 +155,7 @@ new class extends Component {
             localStorage.setItem('leftPanelWidth', this.leftPanelWidth);
         },
         htmlOutput() {
-            return marked.parse(this.liveContent || '', { sanitize: true });
+            return marked.parse(this.liveContent || '', { sanitize: false });
         }
     
     }"
@@ -125,7 +168,7 @@ new class extends Component {
                     </div>
                     <flux:field>
                         <flux:label badge="Required" label="Name" placeholder="Post title">Title</flux:label>
-                        <flux:input wire:model="form.title" type="text" />
+                        <flux:input required wire:model="form.title" type="text" placeholder="ex: My Test Post" />
                         @error('form.title')
                             <flux:error name="title" message="{{ $message }}" />
                         @enderror
@@ -133,16 +176,35 @@ new class extends Component {
                     {{-- flux field for slug --}}
                     <flux:field>
                         <flux:label badge="Required" label="Slug" placeholder="Post slug">Slug</flux:label>
-                        <flux:input wire:model="form.slug" type="text" />
+                        <flux:input required wire:model="form.slug" type="text" placeholder="ex: my-test-post" />
                         @error('form.slug')
                             <flux:error name="slug" message="{{ $message }}" />
+                        @enderror
+                    </flux:field>
+                    {{-- flux field for excerpt --}}
+                    <flux:field>
+                        <flux:label label="Excerpt" placeholder="Post excerpt">Excerpt</flux:label>
+                        <flux:input wire:model="form.excerpt" type="text" placeholder="Type excerpt here.." />
+                        @error('form.excerpt')
+                            <flux:error name="excerpt" message="{{ $message }}" />
+                        @enderror
+                    </flux:field>
+                    {{-- flux field for image --}}
+                    <flux:field>
+                        <flux:label label="Image" placeholder="Post image">Image (URL)</flux:label>
+                        <flux:input wire:model="form.image" type="text"
+                            placeholder="ex: http://imagic.com/image/placeholder.jpg" />
+                        @error('form.image')
+                            <flux:error name="image" message="{{ $message }}" />
                         @enderror
                     </flux:field>
                     {{-- textarea --}}
                     <flux:field>
                         <flux:label label="Description" placeholder="Post content">Description</flux:label>
-                        <x-editor wire:model.live="postContent" />
-                        <flux:error name="content" />
+                        <x-editor wire:model.live="form.content" />
+                        @error('form.image')
+                            <flux:error name="content" message="{{ $message }}" />
+                        @enderror
                     </flux:field>
                     <div class="flex">
                         <flux:spacer />

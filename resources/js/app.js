@@ -1,8 +1,11 @@
 import "./bootstrap";
 
 import { Editor } from "@tiptap/core";
+import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
+import Dropcursor from "@tiptap/extension-dropcursor";
 
 // Daftarkan komponen Alpine `tiptapEditor`
 document.addEventListener("alpine:init", () => {
@@ -22,6 +25,14 @@ document.addEventListener("alpine:init", () => {
                             },
                         }),
                         Markdown,
+                        Link.configure({
+                            openOnClick: true,
+                            defaultProtocol: "https",
+                        }),
+                        Image.configure({
+                            inline: true,
+                            allowBase64: true,
+                        }),
                     ],
                     content: this.state,
                     onUpdate: ({ editor }) => {
@@ -37,8 +48,20 @@ document.addEventListener("alpine:init", () => {
                     }
                 });
             },
+            isLoaded() {
+                return editor && editor.isMounted;
+            },
+            destroy() {
+                if (editor) {
+                    editor.destroy();
+                    editor = null;
+                }
+            },
             isActive(type, opts = {}) {
                 return editor.isActive(type, opts);
+            },
+            toggleParagraph() {
+                return editor.chain().focus().setParagraph().run();
             },
             toggleBold() {
                 return editor.chain().focus().toggleBold().run();
@@ -60,6 +83,44 @@ document.addEventListener("alpine:init", () => {
             },
             toggleBulletList() {
                 return editor.chain().focus().toggleBulletList().run();
+            },
+            setLink() {
+                const previousUrl = editor.getAttributes("link").href;
+                const url = window.prompt("URL", previousUrl);
+
+                // cancelled
+                if (url === null) {
+                    return;
+                }
+
+                // empty
+                if (url === "") {
+                    editor
+                        .chain()
+                        .focus()
+                        .extendMarkRange("link")
+                        .unsetLink()
+                        .run();
+
+                    return;
+                }
+                // update link
+                editor
+                    .chain()
+                    .focus()
+                    .extendMarkRange("link")
+                    .setLink({ href: url })
+                    .run();
+            },
+            toggleCode() {
+                return editor.chain().focus().toggleCode().run();
+            },
+            addImage() {
+                const url = window.prompt("URL");
+
+                if (url) {
+                    editor.chain().focus().setImage({ src: url }).run();
+                }
             },
         };
     });

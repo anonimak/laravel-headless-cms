@@ -27,6 +27,7 @@ new class extends Component {
     },
     onClick() {
         if (this.id) {
+            console.log('Dispatching event:', this.dispatchEvent, 'with ID:', this.id);
             this.$dispatch(this.dispatchEvent, { id: this.id });
         } else {
             console.error('ID is not set.');
@@ -44,7 +45,7 @@ new class extends Component {
         buttonText = $event.detail.buttonText || 'Ya, Hapus';
         buttonVariant = $event.detail.buttonVariant || 'danger';
         dispatchEvent = $event.detail.dispatchEvent || 'btn-delete-click';
-        
+        console.log('Dispatch Event:', dispatchEvent);
         $flux.modal('dialog-confirm-modal').show()
         $nextTick()
     ">

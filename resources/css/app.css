@@ -33,7 +33,7 @@
 /* editor */
 @layer components {
     .editor {
-        @apply prose prose-zinc dark:prose-invert lg:prose-xl;
+        @apply prose prose-zinc dark:prose-invert lg:prose-lg xl:prose-xl 2xl:prose-2xl;
         @apply max-w-none;
         @apply focus:outline-none;
     }

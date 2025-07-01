@@ -25,6 +25,16 @@ class PostService extends BaseService
         $post->save();
     }
 
+    // toggle publish status
+    public function togglePublish(Post $post): void
+    {
+        if ($post->status === Post::STATUS_PUBLISHED) {
+            $this->unpublish($post);
+        } else {
+            $this->publish($post);
+        }
+    }
+
     // attach categories to post
     public function attachCategories(Post $post, array $categoryIds): void
     {

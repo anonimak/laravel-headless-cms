@@ -16,7 +16,7 @@ new class extends Component {};
             setTimeout(() => show = false, 3000);
         }
         "
-    x-show="show" x-transition style="display: none;" class="fixed bottom-4 right-4 z-50 w-full md:w-md">
+    x-show="show" x-transition style="display: none;" class="fixed bottom-4 right-4 z-[1100] w-full md:w-md">
     <flux:callout x-on:click="show = false">
         <x-slot name="icon">
             <template x-if="type === 'success'">
