@@ -1,27 +1,27 @@
 <?php
 use Livewire\Volt\Component;
-use App\Livewire\Forms\PostForm;
+use App\Livewire\Forms\PageForm;
 use Livewire\Attributes\{Reactive, Url, On};
-use App\Models\Post;
-use App\Services\PostService;
+use App\Models\Page;
+use App\Services\PageService;
 
 new class extends Component {
-    public PostForm $form;
+    public PageForm $form;
 
-    public function save(PostService $service)
+    public function save(PageService $service)
     {
         try {
             $this->form->save($service);
             $this->dispatch('show-flash', [
-                'message' => 'Post saved successfully.',
+                'message' => 'Page saved successfully.',
                 'type' => 'success',
             ]);
-            $this->dispatch('post-upserted');
-            Flux::modal('form-post')->close();
+            $this->dispatch('page-upserted');
+            Flux::modal('form-page')->close();
             $this->form->resetForm();
         } catch (\Exception $e) {
             $this->dispatch('show-flash', [
-                'message' => 'Failed to save post: ' . $e->getMessage(),
+                'message' => 'Failed to save page: ' . $e->getMessage(),
                 'type' => 'error',
             ]);
             return;
@@ -29,15 +29,15 @@ new class extends Component {
     }
 
     #[On('open-form')]
-    public function onOpen(PostService $service, ?int $postId = null): void
+    public function onOpen(PageService $service, ?int $pageId = null): void
     {
-        if ($postId) {
-            $post = $service->getById($postId);
+        if ($pageId) {
+            $page = $service->getById($pageId);
         } else {
-            $post = new Post();
+            $page = new Page();
         }
-        $this->form->setPost($post);
-        Flux::modal('form-post')->show();
+        $this->form->setPage($page);
+        Flux::modal('form-page')->show();
     }
 
     public function onCloseForm(): void
@@ -45,22 +45,22 @@ new class extends Component {
         $this->form->resetForm();
     }
 
-    #[On('post-deleted'), On('post-upserted')]
+    #[On('page-deleted'), On('page-upserted')]
     public function placeholder()
     {
         $this->search = '';
     }
 
-    #[On('post-deleted')]
-    public function onPostDeleted(): void
+    #[On('page-deleted')]
+    public function onPageDeleted(): void
     {
         $this->form->resetForm();
-        Flux::modal('form-post')->close();
+        Flux::modal('form-page')->close();
     }
 };
 ?>
 
-<flux:modal name="form-post" @close="onCloseForm" variant="flyout" class="w-full !ml-0 !max-w-full !p-0" dismissible="false"
+<flux:modal name="form-page" @close="onCloseForm" variant="flyout" class="w-full !ml-0 !max-w-full !p-0" dismissible="false"
     wire:ignore.self>
     <flux:header class="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
@@ -71,23 +71,23 @@ new class extends Component {
         </flux:brand>
         <flux:navbar class="-mb-px max-lg:hidden">
             {{-- <flux:button size="sm" variant="filled" class="cursor-pointer">Save</flux:button> --}}
-            @if ($form->post && $form->post->id)
+            @if ($form->page && $form->page->id)
                 <flux:dropdown>
-                    <flux:button size="sm" variant="{{ $form->post->status == 'draft' ? '' : 'primary' }}"
+                    <flux:button size="sm" variant="{{ $form->page->status == 'draft' ? '' : 'primary' }}"
                         icon:trailing="chevron-down" class="cursor-pointer">
-                        {{ $form->post->status == 'draft' ? 'Unpublish' : 'Publish' }}</flux:button>
+                        {{ $form->page->status == 'draft' ? 'Unpublish' : 'Publish' }}</flux:button>
                     <flux:menu>
                         <flux:menu.item class="cursor-pointer"
                             @click="$dispatch('open-dialog-modal', {
-                                'id': {{ $form->post->id }},
-                                'title': '{{ $form->post->status === 'draft' ? 'Publish Post' : 'Unpublish Post' }}',
-                                'description': 'Are you sure you want to {{ $form->post->status === 'draft' ? 'publish' : 'unpublish' }} {{ $form->post->title }} ?',
+                                'id': {{ $form->page->id }},
+                                'title': '{{ $form->page->status === 'draft' ? 'Publish Page' : 'Unpublish Page' }}',
+                                'description': 'Are you sure you want to {{ $form->page->status === 'draft' ? 'publish' : 'unpublish' }} {{ $form->page->title }} ?',
                                 'buttonText':'Yes',
-                                'buttonVariant': '{{ $form->post->status === 'draft' ? 'primary' : 'default' }}',
-                                'dispatchEvent': 'post-status-toggled'
+                                'buttonVariant': '{{ $form->page->status === 'draft' ? 'primary' : 'default' }}',
+                                'dispatchEvent': 'page-status-toggled'
                             })"
-                            icon="{{ $form->post->status == 'draft' ? 'arrow-up-on-square' : 'arrow-down-on-square' }}">
-                            {{ $form->post->status == 'draft' ? 'Publish' : 'Unpublish' }}
+                            icon="{{ $form->page->status == 'draft' ? 'arrow-up-on-square' : 'arrow-down-on-square' }}">
+                            {{ $form->page->status == 'draft' ? 'Publish' : 'Unpublish' }}
                         </flux:menu.item>
                         <flux:menu.separator />
                         <flux:menu.item disabled class="cursor-pointer" icon="document-duplicate">Duplicate
@@ -96,9 +96,9 @@ new class extends Component {
                 </flux:dropdown>
                 <flux:button size="sm" variant="danger" icon="trash" class="cursor-pointer"
                     @click="$dispatch('open-dialog-modal', {
-                                'id': {{ $form->post->id }},
-                                'title': 'Delete Post',
-                                'description': 'Are you sure you want to delete this post {{ $form->post->name }} ? This action cannot be undone.',
+                                'id': {{ $form->page->id }},
+                                'title': 'Delete Page',
+                                'description': 'Are you sure you want to delete this page {{ $form->page->name }} ? This action cannot be undone.',
                                 'buttonText': 'Yes, Delete',
                                 'buttonVariant': 'danger',
                                 'dispatchEvent': 'btn-delete-click'
@@ -118,7 +118,7 @@ new class extends Component {
     </flux:header>
     <div class="flex h-screen overflow-hidden overflow-y-scroll" x-data="{
         isResizing: false,
-        liveContent: @entangle('form.content').live,
+        liveBody: @entangle('form.body').live,
         leftPanelWidth: localStorage.getItem('leftPanelWidth') || window.innerWidth / 2,
         onMouseDown(event) {
             event.preventDefault();
@@ -155,7 +155,7 @@ new class extends Component {
             localStorage.setItem('leftPanelWidth', this.leftPanelWidth);
         },
         htmlOutput() {
-            return marked.parse(this.liveContent || '', { sanitize: false });
+            return marked.parse(this.liveBody || '', { sanitize: false });
         }
     
     }"
@@ -164,46 +164,29 @@ new class extends Component {
             <form wire:submit="save">
                 <div class="space-y-6">
                     <div>
-                        <flux:heading size="lg">{{ __('Form Post') }}</flux:heading>
+                        <flux:heading size="lg">{{ __('Form Page') }}</flux:heading>
                     </div>
                     <flux:field>
-                        <flux:label badge="Required" label="Name" placeholder="Post title">Title</flux:label>
-                        <flux:input required wire:model="form.title" type="text" placeholder="ex: My Test Post" />
+                        <flux:label badge="Required" label="Name" placeholder="Page title">Title</flux:label>
+                        <flux:input required wire:model="form.title" type="text" placeholder="ex: My Test Page" />
                         @error('form.title')
                             <flux:error name="title" message="{{ $message }}" />
                         @enderror
                     </flux:field>
                     {{-- flux field for slug --}}
                     <flux:field>
-                        <flux:label badge="Required" label="Slug" placeholder="Post slug">Slug</flux:label>
-                        <flux:input required wire:model="form.slug" type="text" placeholder="ex: my-test-post" />
+                        <flux:label badge="Required" label="Slug" placeholder="Page slug">Slug</flux:label>
+                        <flux:input required wire:model="form.slug" type="text" placeholder="ex: my-test-page" />
                         @error('form.slug')
                             <flux:error name="slug" message="{{ $message }}" />
                         @enderror
                     </flux:field>
-                    {{-- flux field for excerpt --}}
-                    <flux:field>
-                        <flux:label label="Excerpt" placeholder="Post excerpt">Excerpt</flux:label>
-                        <flux:input wire:model="form.excerpt" type="text" placeholder="Type excerpt here.." />
-                        @error('form.excerpt')
-                            <flux:error name="excerpt" message="{{ $message }}" />
-                        @enderror
-                    </flux:field>
-                    {{-- flux field for image --}}
-                    <flux:field>
-                        <flux:label label="Image" placeholder="Post image">Image (URL)</flux:label>
-                        <flux:input wire:model="form.image" type="text"
-                            placeholder="ex: http://imagic.com/image/placeholder.jpg" />
-                        @error('form.image')
-                            <flux:error name="image" message="{{ $message }}" />
-                        @enderror
-                    </flux:field>
                     {{-- textarea --}}
                     <flux:field>
-                        <flux:label label="Content" placeholder="Post content">Content</flux:label>
-                        <x-editor wire:model.live="form.content" />
+                        <flux:label label="Description" placeholder="Page body">Body</flux:label>
+                        <x-editor wire:model.live="form.body" />
                         @error('form.image')
-                            <flux:error name="content" message="{{ $message }}" />
+                            <flux:error name="body" message="{{ $message }}" />
                         @enderror
                     </flux:field>
                     <div class="flex">
@@ -218,7 +201,7 @@ new class extends Component {
             @mousedown="onMouseDown($event)"></div>
 
         <div class="p-6 flex-grow bg-zinc-50 dark:bg-zinc-800">
-            {{-- live preview postContent --}}
+            {{-- live preview pageBody --}}
             <div class="prose prose-2xl dark:prose-invert mt-4">
                 <div class="mt-4" x-html="htmlOutput">
                 </div>

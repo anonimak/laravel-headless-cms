@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Header;
+namespace App\Livewire\Common;
 
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -10,10 +10,6 @@ class UserProfileDropdown extends Component
     public string $name;
     public string $email;
 
-    /**
-     * Saat komponen pertama kali dimuat, inisialisasi properti
-     * dengan data pengguna yang sedang login.
-     */
     public function mount()
     {
         $user = Auth::user();
@@ -21,12 +17,6 @@ class UserProfileDropdown extends Component
         $this->email = $user->email;
     }
 
-    /**
-     * Method ini akan "mendengarkan" event 'profile-updated' yang dikirim
-     * dari komponen lain dan memperbarui nama.
-     *
-     * Untuk Livewire 2, gunakan protected $listeners = ['profile-updated' => 'updateName'];
-     */
     // [On('profile-updated')]
     public function updateName(string $newName)
     {

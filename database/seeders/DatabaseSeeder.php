@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -38,6 +39,9 @@ class DatabaseSeeder extends Seeder
 
             Artisan::call('scout:import', ['model' => Post::class]);
             $this->command->line('Post model imported successfully.');
+
+            Artisan::call('scout:import', ['model' => Page::class]);
+            $this->command->line('Page model imported successfully.');
 
             $this->command->info('All models imported.');
         }

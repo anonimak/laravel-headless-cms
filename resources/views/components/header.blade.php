@@ -13,23 +13,12 @@
                 wire:navigate>Category</flux:navbar.item>
             <flux:navbar.item icon="document-text" href="{{ route('post') }}" :current="request()->routeIs('post')"
                 wire:navigate>Post</flux:navbar.item>
-            <flux:navbar.item icon="window" href="#">Page</flux:navbar.item>
+            <flux:navbar.item icon="window"  href="{{ route('page') }}" :current="request()->routeIs('page')" wire:navigate>Page</flux:navbar.item>
             <flux:separator vertical variant="subtle" class="my-2" />
             <flux:modal.trigger name="media-manager-modal">
                 <flux:navbar.item icon="photo" href="#">Media Manager</flux:navbar.item>
             </flux:modal.trigger>
         </flux:navbar>
         <flux:spacer />
-
-        <flux:dropdown position="top" align="start">
-            <flux:profile circle avatar:name="{{ auth()->user()->name }}" size="lg" />
-            <flux:menu>
-                <flux:menu.item icon="user" wire:navigate href="{{ route('profile') }}">{{ auth()->user()->name }}
-                </flux:menu.item>
-                <flux:menu.separator />
-                <flux:menu.item icon="arrow-right-start-on-rectangle" wire:click="logout">
-                    Logout
-                </flux:menu.item>
-            </flux:menu>
-        </flux:dropdown>
+        <livewire:common.user-profile-dropdown />
     </flux:header>
