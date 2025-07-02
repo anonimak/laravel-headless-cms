@@ -1,6 +1,30 @@
 # Gunakan image PHP 8.3 dengan Apache sebagai dasar
 FROM php:8.3-apache
 
+# Set environment variables
+ENV APP_ENV=${APP_ENV:-production}
+ENV APP_DEBUG=${APP_DEBUG:-false}
+ENV APP_KEY=${APP_KEY}
+ENV APP_URL=${APP_URL:-https://laravelcms.anonimak.my.id}
+ENV DB_CONNECTION=${DB_CONNECTION:-sqlite}
+ENV DB_HOST=${DB_HOST}
+ENV DB_PORT=${DB_PORT}
+ENV DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
+ENV DB_USERNAME=${DB_USERNAME}
+ENV DB_PASSWORD=${DB_PASSWORD}
+ENV SCOUT_DRIVER=${SCOUT_DRIVER:-collection}
+ENV CACHE_DRIVER=${CACHE_DRIVER:-file}
+ENV SESSION_DRIVER=${SESSION_DRIVER:-file}
+ENV QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}
+ENV FILESYSTEM_DISK=${FILESYSTEM_DISK:-public}
+ENV REDIS_HOST=${REDIS_HOST}
+ENV REDIS_PORT=${REDIS_PORT:-6379}
+ENV MAIL_MAILER=${MAIL_MAILER:-log}
+ENV MAIL_HOST=${MAIL_HOST}
+ENV MAIL_PORT=${MAIL_PORT}
+ENV MAIL_USERNAME=${MAIL_USERNAME}
+ENV MAIL_PASSWORD=${MAIL_PASSWORD}
+
 # Set working directory
 WORKDIR /var/www/html
 
@@ -12,17 +36,19 @@ COPY docker/apache/laravel.conf /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite headers
 
 # --- Instalasi Dependensi Sistem ---
-# Instal dependensi yang dibutuhkan oleh sistem dan ekstensi PHP
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
-    zip \
-    unzip \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    zip \
+    unzip \
+    sqlite3 \
     libsqlite3-dev \
-    # Hapus cache apt untuk memperkecil ukuran image
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Instalasi Ekstensi PHP ---
@@ -33,29 +59,28 @@ RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
 # Gunakan multi-stage build untuk mendapatkan Composer tanpa meninggalkan jejak di image akhir
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+
+# Copy application files
+COPY . /var/www/html
+
+# Set ownership
+RUN chown -R www-data:www-data /var/www/html
+
 # --- Instalasi Dependensi Composer (Optimalisasi Cache) ---
-# Salin hanya file dependensi, lalu instal.
-# Ini akan membuat layer cache untuk 'vendor' yang hanya akan di-rebuild jika composer.json/lock berubah.
-COPY database/ database/
-COPY composer.json composer.lock ./
 RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
 
-# --- Instalasi Dependensi Node.js & Build Aset (Optimalisasi Cache) ---
-# Lakukan hal yang sama untuk dependensi NPM
-COPY package.json package-lock.json* vite.config.js* ./
-# Cek apakah file package.json ada sebelum menjalankan npm
-RUN if [ -f package.json ]; then \
-    apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/* && \
-    npm install && npm run build; \
-    fi
 
-# --- Salin Kode Aplikasi & Atur Izin ---
-# Salin sisa kode aplikasi setelah dependensi diinstal
-COPY . .
+# Install Node.js dependencies and build assets
+RUN npm install && npm run build
 
-# Atur kepemilikan agar Apache dapat mengakses file
-# Ini dilakukan setelah semua file disalin dan dibuat
-RUN chown -R www-data:www-data /var/www/html
+
+# Create necessary directories and set permissions
+RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views storage/app/public/media bootstrap/cache database \
+    && touch database/database.sqlite \
+    && chown -R www-data:www-data storage bootstrap/cache database \
+    && chmod -R 775 storage bootstrap/cache \
+    && chmod 664 database/database.sqlite
+
 
 # --- Konfigurasi Entrypoint ---
 # Salin skrip entrypoint eksternal dan buat agar bisa dieksekusi
@@ -67,7 +92,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost/api/health || exit 1 # Ganti dengan endpoint health check Anda
+    CMD curl -f http://localhost/api/posts || exit 1
 
 # Tetapkan entrypoint dan command default
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
