@@ -81,7 +81,8 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Create Apache virtual host configuration
+
+# Create Apache virtual host configuration with .well-known exception
 RUN echo '<VirtualHost *:80>\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
@@ -89,9 +90,17 @@ RUN echo '<VirtualHost *:80>\n\
         Require all granted\n\
         Options Indexes FollowSymLinks\n\
         RewriteEngine On\n\
+        # Exclude .well-known/acme-challenge from rewrite\n\
+        RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/\n\
         RewriteCond %{REQUEST_FILENAME} !-f\n\
         RewriteCond %{REQUEST_FILENAME} !-d\n\
         RewriteRule ^(.*)$ index.php [QSA,L]\n\
+    </Directory>\n\
+    # Allow access to .well-known/acme-challenge\n\
+    <Directory /var/www/html/public/.well-known/acme-challenge>\n\
+        Options None\n\
+        AllowOverride None\n\
+        Require all granted\n\
     </Directory>\n\
     Header always set Access-Control-Allow-Origin "*"\n\
     Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"\n\
