@@ -72,9 +72,9 @@ RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions sto
     && chmod 664 database/database.sqlite
 
 # add .well-known/acme-challenge directory for Let's Encrypt in public directory
-RUN mkdir -p public/.well-known/acme-challenge \
-    && chown -R www-data:www-data public/.well-known/acme-challenge \
-    && chmod -R 775 public/.well-known/acme-challenge
+RUN mkdir -p /var/www/htmlpublic/.well-known/acme-challenge \
+    && chown -R www-data:www-data /var/www/htmlpublic/.well-known/acme-challenge \
+    && chmod -R 775 /var/www/htmlpublic/.well-known/acme-challenge
 
 # Configure Apache DocumentRoot
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
