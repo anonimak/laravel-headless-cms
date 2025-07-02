@@ -5,9 +5,8 @@
 
     RewriteEngine On
 
-    # Jangan melakukan rewrite untuk .well-known/acme-challenge
-    RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
-
+    # Abaikan semua aturan di bawahnya untuk folder .well-known
+    RewriteRule ^\.well-known/acme-challenge/ - [L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
