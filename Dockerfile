@@ -1,152 +1,74 @@
-# Use PHP 8.3 with Apache
+# Gunakan image PHP 8.3 dengan Apache sebagai dasar
 FROM php:8.3-apache
-
-# Set environment variables
-ENV APP_ENV=${APP_ENV:-production}
-ENV APP_DEBUG=${APP_DEBUG:-false}
-ENV APP_KEY=${APP_KEY}
-ENV APP_URL=${APP_URL:-http://localhost}
-ENV DB_CONNECTION=${DB_CONNECTION:-sqlite}
-ENV DB_HOST=${DB_HOST}
-ENV DB_PORT=${DB_PORT}
-ENV DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
-ENV DB_USERNAME=${DB_USERNAME}
-ENV DB_PASSWORD=${DB_PASSWORD}
-ENV SCOUT_DRIVER=${SCOUT_DRIVER:-collection}
-ENV CACHE_DRIVER=${CACHE_DRIVER:-file}
-ENV SESSION_DRIVER=${SESSION_DRIVER:-file}
-ENV QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}
-ENV FILESYSTEM_DISK=${FILESYSTEM_DISK:-public}
-ENV REDIS_HOST=${REDIS_HOST}
-ENV REDIS_PORT=${REDIS_PORT:-6379}
-ENV MAIL_MAILER=${MAIL_MAILER:-log}
-ENV MAIL_HOST=${MAIL_HOST}
-ENV MAIL_PORT=${MAIL_PORT}
-ENV MAIL_USERNAME=${MAIL_USERNAME}
-ENV MAIL_PASSWORD=${MAIL_PASSWORD}
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies
+# --- Konfigurasi Apache & PHP ---
+# Salin file konfigurasi VirtualHost kustom (lebih bersih daripada 'sed' atau 'echo')
+COPY docker/apache/laravel.conf /etc/apache2/sites-available/000-default.conf
+
+# Aktifkan modul Apache yang diperlukan
+RUN a2enmod rewrite headers
+
+# --- Instalasi Dependensi Sistem ---
+# Instal dependensi yang dibutuhkan oleh sistem dan ekstensi PHP
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    zip \
+    unzip \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    zip \
-    unzip \
-    sqlite3 \
     libsqlite3-dev \
-    nodejs \
-    npm \
+    # Hapus cache apt untuk memperkecil ukuran image
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
+# --- Instalasi Ekstensi PHP ---
+# Instal ekstensi PHP yang umum untuk Laravel
 RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
 
-# Enable Apache modules
-RUN a2enmod rewrite headers
-
-# Get latest Composer
+# --- Instalasi Composer ---
+# Gunakan multi-stage build untuk mendapatkan Composer tanpa meninggalkan jejak di image akhir
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy application files
-COPY . /var/www/html
+# --- Instalasi Dependensi Composer (Optimalisasi Cache) ---
+# Salin hanya file dependensi, lalu instal.
+# Ini akan membuat layer cache untuk 'vendor' yang hanya akan di-rebuild jika composer.json/lock berubah.
+COPY database/ database/
+COPY composer.json composer.lock ./
+RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
 
-# Set ownership
+# --- Instalasi Dependensi Node.js & Build Aset (Optimalisasi Cache) ---
+# Lakukan hal yang sama untuk dependensi NPM
+COPY package.json package-lock.json* vite.config.js* ./
+# Cek apakah file package.json ada sebelum menjalankan npm
+RUN if [ -f package.json ]; then \
+    apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/* && \
+    npm install && npm run build; \
+    fi
+
+# --- Salin Kode Aplikasi & Atur Izin ---
+# Salin sisa kode aplikasi setelah dependensi diinstal
+COPY . .
+
+# Atur kepemilikan agar Apache dapat mengakses file
+# Ini dilakukan setelah semua file disalin dan dibuat
 RUN chown -R www-data:www-data /var/www/html
 
-# Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev --no-interaction
-
-# Install Node.js dependencies and build assets
-RUN npm install && npm run build
-
-# Create necessary directories and set permissions
-RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views storage/app/public/media bootstrap/cache database \
-    && touch database/database.sqlite \
-    && chown -R www-data:www-data storage bootstrap/cache database \
-    && chmod -R 775 storage bootstrap/cache \
-    && chmod 664 database/database.sqlite
-
-# add .well-known/acme-challenge directory for Let's Encrypt in public directory
-RUN mkdir -p /var/www/html/public/.well-known/acme-challenge \
-    && chown -R www-data:www-data /var/www/html/public/.well-known/acme-challenge \
-    && chmod -R 775 /var/www/html/public/.well-known/acme-challenge
-
-# Configure Apache DocumentRoot
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
-    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-
-# Create Apache virtual host configuration with .well-known exception
-RUN echo '<VirtualHost *:80>\n\
-    DocumentRoot /var/www/html/public\n\
-    <Directory /var/www/html/public>\n\
-        AllowOverride All\n\
-        Require all granted\n\
-        Options Indexes FollowSymLinks\n\
-        RewriteEngine On\n\
-        # Exclude .well-known/acme-challenge from rewrite\n\
-        RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/\n\
-        RewriteCond %{REQUEST_FILENAME} !-f\n\
-        RewriteCond %{REQUEST_FILENAME} !-d\n\
-        RewriteRule ^(.*)$ index.php [QSA,L]\n\
-    </Directory>\n\
-    # Allow access to .well-known/acme-challenge\n\
-    <Directory /var/www/html/public/.well-known/acme-challenge>\n\
-        Options None\n\
-        AllowOverride None\n\
-        Require all granted\n\
-    </Directory>\n\
-    Header always set Access-Control-Allow-Origin "*"\n\
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"\n\
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"\n\
-    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
-
-# Setup initialization script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-echo "🚀 Starting Laravel Headless CMS..."\n\
-if [ ! -f .env ]; then\n\
-    echo "📋 Creating .env file..."\n\
-    cp .env.example .env\n\
-fi\n\
-if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then\n\
-    echo "🔑 Generating application key..."\n\
-    php artisan key:generate --force\n\
-fi\n\
-echo "🗄️ Running database migrations..."\n\
-php artisan migrate --force\n\
-echo "🔗 Creating storage symlink..."\n\
-php artisan storage:link || true\n\
-if [ "$APP_ENV" = "production" ]; then\n\
-    echo "⚡ Optimizing for production..."\n\
-    php artisan config:cache\n\
-    php artisan route:cache\n\
-    php artisan view:cache\n\
-fi\n\
-echo "🔍 Indexing content for search..."\n\
-php artisan scout:import "App\\Models\\Post" || true\n\
-php artisan scout:import "App\\Models\\Page" || true\n\
-php artisan scout:import "App\\Models\\Category" || true\n\
-echo "✅ Laravel Headless CMS is ready!"\n\
-echo "🌐 API available at: http://localhost/api"\n\
-exec "$@"' > /usr/local/bin/docker-entrypoint.sh \
-    && chmod +x /usr/local/bin/docker-entrypoint.sh
+# --- Konfigurasi Entrypoint ---
+# Salin skrip entrypoint eksternal dan buat agar bisa dieksekusi
+COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port 80
 EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost/api/posts || exit 1
+    CMD curl -f http://localhost/api/health || exit 1 # Ganti dengan endpoint health check Anda
 
-# Set entrypoint and command
+# Tetapkan entrypoint dan command default
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
