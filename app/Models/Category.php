@@ -39,16 +39,15 @@ class Category extends Model
     {
         return $this->belongsToMany(Post::class, 'category_post', 'category_id', 'post_id')
             ->withTimestamps()
-            ->withSoftDeletes();
+            ->withPivot('deleted_at')
+            ->wherePivot('deleted_at', null);
     }
 
-    // self-referential relationship for parent categories
     public function parent()
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    // self-referential relationship for child categories
     public function children()
     {
         return $this->hasMany(Category::class, 'parent_id');

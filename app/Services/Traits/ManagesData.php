@@ -28,34 +28,16 @@ trait ManagesData
         return $this->getModelClass()::with($with)->find($id);
     }
 
-    /**
-     * Membuat record baru.
-     * * @param array $data
-     * @return \Illuminate\Database\Eloquent\Model
-     */
     public function create(array $data): Model
     {
         return $this->getModelClass()::create($data);
     }
 
-    /**
-     * Memperbarui record yang sudah ada.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param array $data
-     * @return bool
-     */
     public function update(Model $model, array $data): bool
     {
         return $model->update($data);
     }
 
-    /**
-     * Menghapus sebuah record.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @return bool|null
-     */
     public function delete(Model $model): ?bool
     {
         return $model->delete();

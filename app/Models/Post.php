@@ -38,12 +38,13 @@ class Post extends Model
     use \Illuminate\Database\Eloquent\SoftDeletes;
     // timestamps support
     public $timestamps = true;
-    // pivot table for many-to-many relationship with categories post_category
+
     public function categories()
     {
         return $this->belongsToMany(Category::class, 'category_post', 'post_id', 'category_id')
             ->withTimestamps()
-            ->withSoftDeletes();
+            ->withPivot('deleted_at')
+            ->wherePivot('deleted_at', null);
     }
 
     // scout searchable

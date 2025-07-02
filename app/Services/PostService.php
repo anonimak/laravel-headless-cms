@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Post;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
 class PostService extends BaseService
 {
@@ -39,5 +41,25 @@ class PostService extends BaseService
     public function attachCategories(Post $post, array $categoryIds): void
     {
         $post->categories()->sync($categoryIds);
+    }
+
+    public function getPaginatedPublished(?string $search = null, int $perPage = 10, array $with = []): LengthAwarePaginator
+    {
+        if ($search) {
+            return $this->getModelClass()::search($search, function (Builder $query) use ($with) {
+                $query->where('status', 'published');
+                if (!empty($with)) {
+                    return $query->with($with);
+                }
+                return $query;
+            })
+                ->latest()
+                ->paginate($perPage);
+        } else {
+            return $this->getModelClass()::with($with)
+                ->where('status', 'published')
+                ->latest()
+                ->paginate($perPage);
+        }
     }
 }
