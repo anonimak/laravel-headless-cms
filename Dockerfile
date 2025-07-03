@@ -6,6 +6,10 @@ ENV APP_ENV=${APP_ENV:-production}
 ENV APP_DEBUG=${APP_DEBUG:-false}
 ENV APP_KEY=${APP_KEY}
 ENV APP_URL=${APP_URL:-https://laravelcms.anonimak.my.id}
+# Add these new environment variables for HTTPS behind proxy
+ENV ASSET_URL=${APP_URL}
+ENV VITE_SERVER_HTTPS=true
+ENV TRUST_PROXY=true
 ENV DB_CONNECTION=${DB_CONNECTION:-sqlite}
 ENV DB_HOST=${DB_HOST}
 ENV DB_PORT=${DB_PORT}
@@ -33,7 +37,7 @@ WORKDIR /var/www/html
 COPY docker/apache/laravel.conf /etc/apache2/sites-available/000-default.conf
 
 # Aktifkan modul Apache yang diperlukan
-RUN a2enmod rewrite headers
+RUN a2enmod rewrite headers proxy proxy_http ssl
 
 # --- Instalasi Dependensi Sistem ---
 # Install system dependencies
