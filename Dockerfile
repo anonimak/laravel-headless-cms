@@ -88,7 +88,7 @@ RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions sto
 
 # --- Konfigurasi Entrypoint ---
 # Salin skrip entrypoint eksternal dan buat agar bisa dieksekusi
-COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port 80
