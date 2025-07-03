@@ -47,13 +47,25 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \ # <-- Added for the zip extension
     zip \
     unzip \
     sqlite3 \
     libsqlite3-dev \
     nodejs \
     npm \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && docker-php-ext-install \
+    pdo_mysql \
+    pdo_sqlite \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \        # <-- Added zip extension
+    ctype \      # <-- Added ctype extension
+    fileinfo     # <-- Added fileinfo extension
 
 # --- Instalasi Ekstensi PHP ---
 # Instal ekstensi PHP yang umum untuk Laravel
