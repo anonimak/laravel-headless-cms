@@ -102,6 +102,3 @@ CMD sh -c "php artisan migrate --force && \
     if [ \"$APP_ENV\" = \"production\" ]; then php artisan config:cache && php artisan route:cache && php artisan view:cache; fi && \
     echo 'Laravel startup tasks complete.' && \
     php-fpm"
-
-# Start PHP built-in server on port 9001
-CMD ["php-fpm"]
