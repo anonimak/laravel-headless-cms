@@ -54,6 +54,7 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     nodejs \
     npm \
+    nano \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install \
     pdo_mysql \
@@ -79,11 +80,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 
 # Install Composer dependencies
-RUN if [ "$APP_ENV" = "production" ] ; then \
-    composer install --optimize-autoloader --no-dev ; \
-    else \
-    composer install ; \
-    fi
+RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
 
 # Copy Node.js dependency files
 COPY package.json package-lock.json ./
