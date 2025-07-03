@@ -71,7 +71,12 @@ COPY . /var/www/html
 RUN chown -R www-data:www-data /var/www/html
 
 # --- Instalasi Dependensi Composer (Optimalisasi Cache) ---
-RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
+# Install dependencies based on environment
+RUN if [ "$APP_ENV" = "production" ] ; then \
+    composer install --optimize-autoloader --no-dev ; \
+    else \
+    composer install ; \
+    fi
 
 
 # Install Node.js dependencies and build assets

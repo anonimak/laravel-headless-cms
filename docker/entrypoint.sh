@@ -1,16 +1,24 @@
 #!/bin/bash
 set -e
 echo "🚀 Starting Laravel Headless CMS..."
+
 if [ ! -f .env ]; then
     echo "📋 Creating .env file..."
     cp .env.example .env
 fi
+
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then
     echo "🔑 Generating application key..."
     php artisan key:generate --force
 fi
+
 echo "🗄️ Running database migrations..."
-php artisan migrate --force
+if [ "$APP_ENV" = "production" ]; then
+    php artisan migrate --force --no-dev
+else
+    php artisan migrate --force
+fi
+
 echo "🔗 Creating storage symlink..."
 php artisan storage:link || true
 if [ "$APP_ENV" = "production" ]; then
