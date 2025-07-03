@@ -13,11 +13,8 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then
 fi
 
 echo "🗄️ Running database migrations..."
-if [ "$APP_ENV" = "production" ]; then
-    php artisan migrate --force --no-dev
-else
-    php artisan migrate --force
-fi
+# --no-dev is not a valid flag for migrate, so it's removed.
+php artisan migrate --force
 
 echo "🔗 Creating storage symlink..."
 php artisan storage:link || true

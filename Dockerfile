@@ -63,24 +63,28 @@ RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
 # Gunakan multi-stage build untuk mendapatkan Composer tanpa meninggalkan jejak di image akhir
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Copy only dependency files first
+COPY composer.json composer.lock ./
 
-# Copy application files
-COPY . /var/www/html
-
-# Set ownership
-RUN chown -R www-data:www-data /var/www/html
-
-# --- Instalasi Dependensi Composer (Optimalisasi Cache) ---
-# Install dependencies based on environment
+# Install Composer dependencies
 RUN if [ "$APP_ENV" = "production" ] ; then \
     composer install --optimize-autoloader --no-dev ; \
     else \
     composer install ; \
     fi
 
+# Copy Node.js dependency files
+COPY package.json package-lock.json ./
 
 # Install Node.js dependencies and build assets
 RUN npm install && npm run build
+
+
+# Copy application files
+COPY . .
+
+# Set ownership
+RUN chown -R www-data:www-data /var/www/html
 
 
 # Create necessary directories and set permissions
