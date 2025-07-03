@@ -97,7 +97,11 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 EXPOSE 9009
 
 # Tetapkan entrypoint dan command default
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-# <-- Changed CMD to start PHP-FPM
+CMD sh -c "php artisan migrate --force && \
+    php artisan storage:link || true && \
+    if [ \"$APP_ENV\" = \"production\" ]; then php artisan config:cache && php artisan route:cache && php artisan view:cache; fi && \
+    echo 'Laravel startup tasks complete.' && \
+    php-fpm"
+
 # Start PHP built-in server on port 9001
-CMD ["php", "-S", "0.0.0.0:9009", "-t", "public"]
+CMD ["php-fpm"]
