@@ -29,9 +29,6 @@ ENV MAIL_PORT=${MAIL_PORT}
 ENV MAIL_USERNAME=${MAIL_USERNAME}
 ENV MAIL_PASSWORD=${MAIL_PASSWORD}
 
-# Set working directory
-WORKDIR /var/www/html
-
 # --- Konfigurasi Apache & PHP ---
 # Salin file konfigurasi VirtualHost kustom (lebih bersih daripada 'sed' atau 'echo')
 COPY docker/apache/laravel.conf /etc/apache2/sites-available/000-default.conf
@@ -72,18 +69,17 @@ RUN apt-get update && apt-get install -y \
 # Instal ekstensi PHP yang umum untuk Laravel
 RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
 
-# --- Instalasi Composer ---
-# Gunakan multi-stage build untuk mendapatkan Composer tanpa meninggalkan jejak di image akhir
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Copy only dependency files first
-COPY composer.json composer.lock ./
-
-# Install Composer dependencies
-RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
+# Set working directory
+WORKDIR /var/www/html
 
 # Copy application files
 COPY . .
+
+
+# Install Composer dependencies
+RUN composer install --no-dev --no-interaction
+
+
 
 # Install Node.js dependencies and build assets
 RUN npm install && npm run build
@@ -93,11 +89,10 @@ RUN chown -R www-data:www-data /var/www/html
 
 
 # Create necessary directories and set permissions
-RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views storage/app/public/media bootstrap/cache database \
-    && touch database/database.sqlite \
-    && chown -R www-data:www-data storage bootstrap/cache database \
-    && chmod -R 775 storage bootstrap/cache \
-    && chmod 664 database/database.sqlite
+RUN mkdir -p /var/www/html/storage/logs /var/www/html/storage/framework/cache /var/www/html/storage/framework/sessions /var/www/html/storage/framework/views /var/www/html/storage/app/public/media /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
+
 
 
 # --- Konfigurasi Entrypoint ---
@@ -109,8 +104,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 EXPOSE 80
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost/api/posts || exit 1
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    # CMD curl -f http://localhost/api/posts || exit 1
 
 # Tetapkan entrypoint dan command default
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

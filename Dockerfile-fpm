@@ -29,8 +29,6 @@ ENV MAIL_PORT=${MAIL_PORT}
 ENV MAIL_USERNAME=${MAIL_USERNAME}
 ENV MAIL_PASSWORD=${MAIL_PASSWORD}
 
-# Set working directory
-WORKDIR /var/www/html
 
 # --- Instalasi Dependensi Sistem & Ekstensi PHP ---
 # Combined install for better layer caching
@@ -65,11 +63,14 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 
+# Set working directory
+WORKDIR /var/www/html
+
 # --- Salin Kode Aplikasi ---
 COPY . .
 
 # --- Instalasi Dependensi Aplikasi (Cache-Optimized) ---
-RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
+RUN composer install --no-dev --optimize-autoloader
 
 # --- Instalasi Dependensi Node.js dan Build Aset ---
 RUN npm install && npm run build
@@ -82,20 +83,20 @@ RUN chown -R www-data:www-data /var/www/html
 COPY docker/php/custom-www.conf /usr/local/etc/php-fpm.d/www.conf
 
 # Create necessary directories and set permissions
-RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views storage/app/public/media bootstrap/cache database \
-    && touch database/database.sqlite \
-    && chown -R www-data:www-data storage bootstrap/cache database \
-    && chmod -R 775 storage bootstrap/cache \
-    && chmod 664 database/database.sqlite
+RUN mkdir -p /var/www/html/storage/logs /var/www/html/storage/framework/cache /var/www/html/storage/framework/sessions /var/www/html/storage/framework/views /var/www/html/storage/app/public/media /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
+
 
 # --- Konfigurasi Entrypoint ---
 COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port 9001 for PHP-FPM
-EXPOSE 9001
+EXPOSE 9009
 
 # Tetapkan entrypoint dan command default
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 # <-- Changed CMD to start PHP-FPM
-CMD ["php-fpm"]
+# Start PHP built-in server on port 9001
+CMD ["php", "-S", "0.0.0.0:9009", "-t", "public"]

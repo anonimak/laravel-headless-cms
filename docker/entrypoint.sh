@@ -2,11 +2,6 @@
 set -e
 echo "🚀 Starting Laravel Headless CMS..."
 
-if [ ! -f .env ]; then
-    echo "📋 Creating .env file..."
-    cp .env.example .env
-fi
-
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then
     echo "🔑 Generating application key..."
     php artisan key:generate --force
