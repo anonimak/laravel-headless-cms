@@ -66,14 +66,20 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# --- Salin Kode Aplikasi ---
-COPY . .
+# Salin hanya file dependensi terlebih dahulu
+COPY composer.json composer.lock ./
 
 # --- Instalasi Dependensi Aplikasi (Cache-Optimized) ---
 RUN composer install --no-dev --optimize-autoloader
 
+# Salin file dependensi Node.js
+COPY package.json package-lock.json ./
+
 # --- Instalasi Dependensi Node.js dan Build Aset ---
 RUN npm install && npm run build
+
+# --- Salin Kode Aplikasi ---
+COPY . .
 
 
 # Set ownership
@@ -94,7 +100,7 @@ COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port 9001 for PHP-FPM
-EXPOSE 9009
+EXPOSE 9000
 
 # Tetapkan entrypoint dan command default
 CMD sh -c "php artisan migrate --force && \

@@ -1,0 +1,16 @@
+# Abaikan file dari Git
+.git
+.gitignore
+
+# Abaikan file dari Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Abaikan dependensi dan file environment
+node_modules
+vendor
+.env
+
+# Abaikan file log
+storage/logs
