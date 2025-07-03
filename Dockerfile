@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    libzip-dev \ # <-- Added for the zip extension
+    libzip-dev \
     zip \
     unzip \
     sqlite3 \
@@ -63,9 +63,9 @@ RUN apt-get update && apt-get install -y \
     pcntl \
     bcmath \
     gd \
-    zip \        # <-- Added zip extension
-    ctype \      # <-- Added ctype extension
-    fileinfo     # <-- Added fileinfo extension
+    zip \
+    ctype \
+    fileinfo
 
 # --- Instalasi Ekstensi PHP ---
 # Instal ekstensi PHP yang umum untuk Laravel
