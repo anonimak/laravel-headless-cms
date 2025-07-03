@@ -82,15 +82,11 @@ COPY composer.json composer.lock ./
 # Install Composer dependencies
 RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
 
-# Copy Node.js dependency files
-COPY package.json package-lock.json ./
+# Copy application files
+COPY . .
 
 # Install Node.js dependencies and build assets
 RUN npm install && npm run build
-
-
-# Copy application files
-COPY . .
 
 # Set ownership
 RUN chown -R www-data:www-data /var/www/html
