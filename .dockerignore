@@ -1,16 +1,22 @@
-# Abaikan file dari Git
+# Git
 .git
 .gitignore
 
-# Abaikan file dari Docker
-Dockerfile
-.dockerignore
-docker-compose.yml
-
-# Abaikan dependensi dan file environment
+# Node
 node_modules
-vendor
-.env
 
-# Abaikan file log
-storage/logs
+# Composer
+vendor
+
+# Laravel
+.env
+storage/framework/sessions/*
+storage/framework/cache/data/*
+storage/framework/views/*
+storage/logs/*.log
+public/storage
+
+# Docker - Jangan abaikan folder 'docker/'
+Dockerfile
+docker-compose.yml
+.dockerignore
