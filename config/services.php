@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'http' => [
+        'verify' => env('HTTP_VERIFY_SSL', true), // Enable SSL verification by default
+        'timeout' => env('HTTP_TIMEOUT', 30), // Default timeout for HTTP requests
+        'connect_timeout' => env('HTTP_CONNECT_TIMEOUT', 10), // Default connection timeout
+    ],
+
 ];

@@ -1,262 +1,276 @@
-# Laravel Headless CMS
+# Laravel COVID-19 Dashboard
 
-<p align="center">
-    <img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="300" alt="Laravel Logo">
-</p>
+Aplikasi dashboard COVID-19 yang menampilkan statistik real-time kasus Indonesia dan Global dengan visualisasi chart timeline.
 
-<p align="center">
-    <strong>A modern headless CMS built with Laravel 11 and the TALL stack</strong>
-</p>
+## Tools dan Framework
 
-<p align="center">
-    <img src="https://img.shields.io/badge/Laravel-11.x-red.svg" alt="Laravel 11">
-    <img src="https://img.shields.io/badge/PHP-8.2+-blue.svg" alt="PHP 8.2+">
-    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
-</p>
+- **Backend**: Laravel 11 dengan Livewire Volt
+- **Frontend**: Blade Templates + Flux UI Components
+- **Database**: MySQL/SQLite
+- **Visualisasi**: Chart.js
+- **HTTP Client**: Laravel HTTP Facade
+- **Styling**: Tailwind CSS
 
-## About This Project
+## Struktur Folder Laravel 11
 
-Laravel Headless CMS is a powerful, API-first content management system built with Laravel 11. It provides a clean, RESTful API for managing content that can be consumed by any frontend application—whether it's a React SPA, Vue.js application, mobile app, or static site generator.
+```
+laravel-headless-cms/
+├── app/
+│   ├── Console/
+│   │   └── Commands/
+│   │       └── SyncCovidData.php          # Command sync data COVID
+│   ├── Http/
+│   │   ├── Controllers/                   # Controllers (jika diperlukan)
+│   │   └── Middleware/
+│   ├── Models/
+│   │   └── CovidStat.php                  # Model data COVID
+├── bootstrap/
+├── config/
+│   ├── app.php
+│   └── services.php                       # HTTP config settings
+├── database/
+│   ├── migrations/
+│   │   └── xxxx_create_covid_stats_table.php
+│   └── seeders/
+├── public/
+├── resources/
+│   ├── css/
+│   │   └── app.css                        # Tailwind CSS
+│   ├── js/
+│   │   └── app.js                         # JavaScript assets
+│   └── views/
+│       ├── components/
+│       │   └── scoreboard-card.blade.php  # Reusable component
+│       ├── layouts/
+│       │   └── app.blade.php              # Main layout
+│       └── livewire/
+│           └── dashboard/
+│               └── index.blade.php        # Dashboard Livewire Volt
+├── routes/
+│   ├── web.php                            # Web routes
+│   └── console.php                        # Scheduled commands
+```
 
-### Key Features
+## Alur Proses Data
 
-- 🚀 **RESTful API** - Clean, well-documented API endpoints
-- 🔍 **Full-Text Search** - Powered by Laravel Scout for lightning-fast content search
-- 📱 **Headless Architecture** - Use any frontend technology
-- 🏗️ **Service Layer** - Clean architecture with separation of concerns
-- 📂 **Hierarchical Categories** - Nested category structure for content organization
-- 📄 **Content Management** - Posts, pages, categories, and media management
-- 🔐 **Validation** - Comprehensive input validation and error handling
-- 📊 **Pagination** - Efficient data loading with customizable pagination
-- 🗃️ **Soft Deletes** - Data preservation with recovery capabilities
-- 🧪 **Fully Tested** - Comprehensive test suite with PHPUnit/Pest
+1. **Data Collection**: Command `SyncCovidData` mengambil data dari COVID API
+2. **Data Storage**: Data disimpan ke database melalui model `CovidStat`
+3. **Data Processing**: Livewire component memproses data untuk dashboard
+4. **Data Visualization**: Chart.js menampilkan timeline dalam bentuk line chart
+5. **Real-time Updates**: Livewire polling setiap 15 detik untuk update otomatis
 
-### Tech Stack
+## File-File Utama
 
-- **Backend**: Laravel 11 with PHP 8.2+
-- **Database**: SQLite (development) / MySQL/PostgreSQL (production)
-- **Search**: Laravel Scout (configurable drivers)
-- **Testing**: PHPUnit/Pest for comprehensive test coverage
-- **Architecture**: Service layer pattern with API resources
+### Console Command
+```php
+// app/Console/Commands/SyncCovidData.php
+- Mengambil data dari COVID API
+- Menyimpan ke database dengan model CovidStat
+- Menggunakan HttpService untuk HTTP requests
+```
 
-## Quick Start
+### Model
+```php
+// app/Models/CovidStat.php
+- Eloquent model untuk tabel covid_stats
+```
 
-### Prerequisites
+### Livewire Component
+```php
+// resources/views/livewire/dashboard/index.blade.php
+- Volt component untuk dashboard
+- Real-time data loading
+- Chart data preparation
+```
 
-Make sure you have the following installed:
-- PHP 8.2 or higher
-- Composer
-- Node.js & NPM (for asset compilation)
-- SQLite (included) or MySQL/PostgreSQL
+### Blade Components
+```php
+// resources/views/components/scoreboard-card.blade.php
+- Reusable UI component
+- Props untuk data dan styling
+```
 
-### Installation
+## Sinkronisasi Data
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/anonimak/laravel-headless-cms
-   cd laravel-headless-cms
-   ```
+### Manual Sync
+```bash
+# Menjalankan sync secara manual
+php artisan app:sync-covid-data
+```
 
-2. **Install PHP dependencies**
-   ```bash
-   composer install
-   ```
+### Automated Sync (Scheduled)
+```php
+// routes/console.php
+Schedule::command('app:sync-covid-data')
+    ->dailyAt('00:00')
+    ->onFailure(function () {
+        Log::error('Sinkronisasi data COVID-19 gagal.');
+    })
+    ->withoutOverlapping()
+    ->runInBackground();
+```
 
-3. **Install Node.js dependencies**
-   ```bash
-   npm install
-   ```
-
-4. **Environment setup**
-   ```bash
-   # Copy environment file
-   cp .env.example .env
-   
-   # Generate application key
-   php artisan key:generate
-   ```
-
-5. **Database setup**
-   ```bash
-   # Create SQLite database (default)
-   touch database/database.sqlite
-   
-   # Run migrations
-   php artisan migrate
-   
-   # Seed with sample data (optional)
-   php artisan db:seed
-   ```
-
-6. **Configure Laravel Scout** (for search functionality)
-   ```bash
-   # Publish Scout configuration
-   php artisan vendor:publish --provider="Laravel\Scout\ScoutServiceProvider"
-   
-   # Index existing content
-   php artisan scout:import "App\Models\Post"
-   php artisan scout:import "App\Models\Page"
-   php artisan scout:import "App\Models\Category"
-   ```
-
-7. **Create storage symlink**
-   ```bash
-   php artisan storage:link
-   ```
-
-8. **Start the development server**
-   ```bash
-   php artisan serve
-   ```
-
-Your API will be available at `http://localhost:8000/api`
-
-## API Documentation
-
-Comprehensive API documentation is available in [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md). The API provides endpoints for:
-
-- **Posts** - Create, read, update, delete blog posts with categories
-- **Categories** - Hierarchical category management
-- **Pages** - Static page management with templates
-- **Media** - File upload and media management
-
-### Quick API Examples
+### Setup Cron Job
+Untuk mengaktifkan scheduled command, tambahkan cron job berikut:
 
 ```bash
-# Get all published posts
-curl http://localhost:8000/api/posts
+# Edit crontab
+crontab -e
 
-# Search posts
-curl "http://localhost:8000/api/posts?search=laravel&per_page=5"
-
-# Get categories with children
-curl "http://localhost:8000/api/categories?with_children=true"
-
-# Create a new post
-curl -X POST http://localhost:8000/api/posts \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "My First Post",
-    "content": "Post content here...",
-    "status": "published"
-  }'
+# Tambahkan baris berikut (ganti /path-to-your-project dengan path aplikasi)
+* * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-## Development
+Data diambil dari 30 hari terakhir (3 tahun yang lalu untuk simulasi) dengan endpoint:
+- Indonesia: `covid-api.com/api/reports/total?date={date}&iso=IDN`
+- Global: `covid-api.com/api/reports/total?date={date}`
 
-### Project Structure
+## Struktur Database
 
+### Table: `covid_stats`
+```sql
+- id (primary key)
+- date (date) - Tanggal data
+- region_name (string) - Nama wilayah (Indonesia/Global)
+- region_iso (string, nullable) - Kode ISO negara
+- confirmed (integer) - Kasus terkonfirmasi
+- deaths (integer) - Kasus meninggal
+- recovered (integer) - Kasus sembuh
+- created_at, updated_at (timestamps)
+
+# Index
+- Unique: [date, region_name]
+- Index: [date, region_iso]
 ```
-app/
-├── Http/
-│   ├── Controllers/Api/    # API controllers
-│   ├── Requests/Api/       # Form request validation
-│   └── Resources/Api/      # API resource transformers
-├── Models/                 # Eloquent models
-├── Services/              # Business logic layer
-└── ...
-routes/
-├── api.php               # API routes
-└── ...
-tests/
-├── Feature/Api/          # API integration tests
-└── Unit/                 # Unit tests
+
+**Alasan Desain**:
+- **Denormalisasi**: Menyimpan `region_name` dan `region_iso` untuk performa query
+- **Unique Constraint**: Mencegah duplikasi data per tanggal dan region
+- **Nullable ISO**: Global data tidak memiliki kode ISO
+- **Integer Type**: Untuk kasus angka, lebih efisien daripada string
+
+## Konfigurasi Laravel 11
+
+### HTTP Configuration
+```php
+// config/services.php
+'http' => [
+    'verify' => env('HTTP_VERIFY_SSL', true),
+    'timeout' => env('HTTP_TIMEOUT', 30),
+    'connect_timeout' => env('HTTP_CONNECT_TIMEOUT', 10),
+],
 ```
 
-### Running Tests
+### Asset Compilation
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: ['resources/css/app.css', 'resources/js/app.js'],
+            refresh: true,
+        }),
+    ],
+});
+```
+
+## Tantangan Teknis & Solusi
+
+
+### 1. Chart Data Performance
+**Masalah**: Query database berulang untuk chart
+```php
+// Solusi: Single query dengan collection filtering
+$timeline = CovidStat::where('date', '>=', $startDate)->get();
+$chartData = [
+    'labels' => $timeline->where('region_name', 'Global')->pluck('date'),
+    'indonesia' => $timeline->where('region_name', 'Indonesia')->pluck('confirmed'),
+    'global' => $timeline->where('region_name', 'Global')->pluck('confirmed'),
+];
+```
+
+### 2. Component Reusability
+**Masalah**: UI component yang dapat digunakan ulang
+```php
+// Solusi: Blade component di resources/views/components/
+<x-scoreboard-card title="Indonesia" :dataScore="$dataIndonesia">
+    <!-- Slot content -->
+</x-scoreboard-card>
+```
+
+### 3. Scheduled Command Setup
+**Masalah**: Otomatisasi sync data harian
+```php
+// Solusi: Konfigurasi di routes/console.php dengan error handling
+Schedule::command('app:sync-covid-data')
+    ->dailyAt('00:00')
+    ->onFailure(function () {
+        Log::error('Sinkronisasi data COVID-19 gagal.');
+    })
+    ->withoutOverlapping()
+    ->runInBackground();
+```
+
+## Instalasi
 
 ```bash
-# Run all tests
-php artisan test
+# Clone dan setup
+git clone <repo-url>
+cd laravel-headless-cms
+composer install
+npm install
 
-# Run API tests only
-php artisan test --filter=Api
+# Environment
+cp .env.example .env
+php artisan key:generate
 
-# Run specific test file
-php artisan test tests/Feature/Api/PostApiTest.php
+# Database
+php artisan migrate
+php artisan app:sync-covid-data
 
-# Run tests with coverage
-php artisan test --coverage
+# Assets
+npm run build
+
+# Development server
+php artisan serve
 ```
 
-## Configuration
-
-### Environment Variables
-
-Key environment variables to configure:
+## Environment Configuration
 
 ```env
 # Database
-DB_CONNECTION=sqlite
-DB_DATABASE=/absolute/path/to/database/database.sqlite
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=covid_dashboard
+DB_USERNAME=root
+DB_PASSWORD=
 
-# Scout Search Driver
-SCOUT_DRIVER=collection  # or 'algolia', 'meilisearch', etc.
+# HTTP Settings
+HTTP_VERIFY_SSL=false
+HTTP_TIMEOUT=30
+HTTP_CONNECT_TIMEOUT=10
 
-# File Storage
-FILESYSTEM_DISK=public
-
-# App
-APP_URL=http://localhost:8000
+# Application
+APP_NAME="COVID-19 Dashboard"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
 ```
 
-### Search Configuration
+## Testing
 
-The project uses Laravel Scout for search. Configure your preferred search driver in `config/scout.php`:
+```bash
+# Run tests
+php artisan test
 
-- **Collection Driver** (default) - Good for development and small datasets
-- **Database Driver** - MySQL/PostgreSQL full-text search
-- **Algolia** - Cloud search service
-- **Meilisearch** - Self-hosted search engine
+# Test command
+php artisan app:sync-covid-data
 
-## Deployment
-
-### Production Setup
-
-1. **Environment Configuration**
-   ```bash
-   # Set production environment
-   APP_ENV=production
-   APP_DEBUG=false
-   
-   # Configure database
-   DB_CONNECTION=mysql
-   DB_HOST=your-db-host
-   DB_DATABASE=your-db-name
-   DB_USERNAME=your-db-user
-   DB_PASSWORD=your-db-password
-   ```
-
-2. **Optimization**
-   ```bash
-   # Cache configuration
-   php artisan config:cache
-   
-   # Cache routes
-   php artisan route:cache
-   
-   # Cache views
-   php artisan view:cache
-   
-   # Optimize autoloader
-   composer install --optimize-autoloader --no-dev
-   ```
-
-3. **Security**
-   - Set up proper file permissions
-   - Configure HTTPS
-   - Set up CORS for your frontend domain
-   - Implement rate limiting
-   - Add authentication (Laravel Sanctum recommended)
-
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-
-<p align="center">Built with ❤️ using Laravel 11</p>
+# Test schedule
+php artisan schedule:list
+php artisan schedule:run
+```

@@ -10,10 +10,10 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
-    server: {
-        https: true,
-        hmr: {
-            protocol: "wss",
-        },
-    },
+    // server: {
+    //     https: true,
+    //     hmr: {
+    //         protocol: "wss",
+    //     },
+    // },
 });
